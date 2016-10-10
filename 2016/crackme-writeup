@@ -1,0 +1,86 @@
+HITCON CTF 2016
+
+Write up for crackme.py
+
+For this challenge, we are going to disassembly the compiled python program, 
+although we cannot directly decompile it, we can still get the message we want :)
+
+- use uncompyle2
+(https://github.com/wibiti/uncompyle2)
+
+- decompile the python 
+
+import uncompyle
+import marshal, zlib, base64
+ 
+co = marshal.loads(zlib.decompress(base64.b64decode('eJyNVktv00AQXm/eL0igiaFA01IO4cIVCUGFBBJwqRAckLhEIQmtRfPwI0QIeio/hRO/hJ/CiStH2M/prj07diGRP43Hs9+MZ2fWMxbnP6mux+oK9xVMHPFViLdCTB0xkeKDFEFfTIU4E8KZq8dCvB4UlN3hGEsdddXU9QTLv1eFiGKGM4cKUgsFCNLFH7dFrS9poayFYmIZm1b0gyqxMOwJaU3r6xs9sW1ooakXuRv+un7Q0sIlLVzOCZq/XtsK2oTSYaZlStogXi1HV0iazoN2CV2HZeXqRQ54TlJRb7FUlKyUatISsdzo+P7UU1Gb1POdMruckepGwk9tIXQTftz2yBaT5JQovWvpSa6poJPuqgao+b9l5Aj/R+mLQIP4f6Q8Vb3g/5TB/TJxWGdZr9EQrmn99fwKtTvAZGU7wzS7GNpZpDm2JgCrr8wrmPoo54UqGampFIeS9ojXjc4E2yI06bq/4DRoUAc0nVnng4k6p7Ks0+j/S8z9V+NZ5dhmrJUM/y7JTJeRtnJ2TSYJvsFq3CQt/vnfqmQXt5KlpuRcIvDAmhnn2E0t9BJ3SvB/SfLWhuOWNiNVZ+h28g4wlwUp00w95si43rZ3r6+fUIEdgOZbQAsyFRRvBR6dla8KCzRdslar7WS+a5HFb39peIAmG7uZTHVm17Czxju4m6bayz8e7J40DzqM0jr0bmv9PmPvk6y5z57HU8wdTDHeiUJvBMAM4+0CpoAZ4BPgJeAYEAHmgAUgAHiAj4AVAGORtwd4AVgC3gEmgBBwCPgMWANOAQ8AbwBHgHuAp4D3gLuARwoGmNUizF/j4yDC5BWM1kNvvlxFA8xikRrBxHIUhutFMBlgQoshhPphGAXe/OggKqqb2cibxwuEXjUcQjccxi5eFRL1fDSbKrUhy2CMb2aLyepkegDWsBwPlrVC0/kLHmeCBQ==')))
+ 
+f=open('/tmp/testa','w');
+uncompyle.uncompyle('2.7',co,f);
+
+- but it will fail to decompile, and we will see the follow error message
+.......
+2209	BINARY_ADD        None
+2210	BINARY_ADD        None
+2211	BINARY_ADD        None
+2212	PRINT_ITEM        None
+2213	PRINT_NEWLINE_CONT None
+
+Syntax error at or near `ROT_TWO' token at offset 36
+
+- we simply copy all the text into a text file "dis.txt"
+the content will be something like below:
+
+............
+
+0	LOAD_GLOBAL       'chr'
+3	LOAD_CONST        108
+6	CALL_FUNCTION_1   None
+9	LOAD_GLOBAL       'chr'
+12	LOAD_CONST        108
+15	CALL_FUNCTION_1   None
+18	LOAD_GLOBAL       'chr'
+21	LOAD_CONST        97
+24	CALL_FUNCTION_1   None
+27	LOAD_GLOBAL       'chr'
+30	LOAD_CONST        67
+33	CALL_FUNCTION_1   None
+36	ROT_TWO           None
+37	BINARY_ADD        None
+38	ROT_TWO           None
+39	BINARY_ADD        None
+
+...............
+
+- what we need to do, is to get the "chr" and corresponding number on the next line
+- and when we see "ROT_TWO", we do a reverse of the string
+- so we write a simple python scripts to process the text file
+
+a = ''
+final = ''
+f = open('dis.txt')
+for line in f:
+	if ('chr' in line):
+		#print line
+		nextline = next(f)
+		#print nextline
+		num = nextline.split('LOAD_CONST')
+		if (len(num) > 1):
+			a = a + chr(int(num[1].strip()))
+
+	if ('ROT_TWO' in line):
+	 	tmp = a[::-1]
+	 	print tmp
+	 	final = final + tmp
+	 	a = ''
+
+f.close()
+
+print final
+
+- and we got the message:
+
+Call me a Python virtual machine! I can interpret Python bytecodes!!!hitcon{Now you can compile and run Python bytecode in your brain!}password: Wrong password... Please try again. Do not brute force. =)
+
+
+flag: hitcon{Now you can compile and run Python bytecode in your brain!}
